@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پایش رقابتی مدیران دارایی — داده فیپ‌ایران</title>
+<style>
+  :root {
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --s1: #2a78d6; --s2: #1baf7a; --s3: #eda100; --s4: #008300;
+    --s5: #4a3aa7; --s6: #e34948; --s7: #e87ba4; --s8: #eb6834;
+    --agg-comp: #eb6834;
+    --agg-others: #898781;
+    --agg-ind: #0b0b0b;
+    --chip-on: #eef3fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.12);
+      --s1: #3987e5; --s2: #199e70; --s3: #c98500; --s4: #008300;
+      --s5: #9085e9; --s6: #e66767; --s7: #d55181; --s8: #d95926;
+      --agg-comp: #d95926;
+      --agg-others: #898781;
+      --agg-ind: #ffffff;
+      --chip-on: #24303f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--text-primary);
+    font-family: system-ui, "Segoe UI", Tahoma, sans-serif;
+    font-size: 14px; line-height: 1.7;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 48px; }
+  header h1 { font-size: 21px; margin: 0 0 2px; }
+  header .sub { color: var(--text-secondary); font-size: 13px; margin-bottom: 18px; }
+  .panel {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 14px;
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-end; }
+  .ctl { display: flex; flex-direction: column; gap: 4px; }
+  .ctl > .lbl { font-size: 12px; color: var(--text-secondary); }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    border: 0; background: transparent; color: var(--text-secondary);
+    padding: 6px 14px; cursor: pointer; font: inherit; font-size: 13px;
+  }
+  .seg button.on { background: var(--chip-on); color: var(--text-primary); font-weight: 600; }
+  select {
+    font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+  }
+  label.chk { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; padding-bottom: 6px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 2px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px;
+    font-size: 12.5px; color: var(--text-secondary); background: transparent; user-select: none;
+  }
+  .chip.on { background: var(--chip-on); color: var(--text-primary); }
+  .chip.off .key { opacity: .25; }
+  .chip .key { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+  .chip.disabled { opacity: .35; pointer-events: none; }
+  #chartbox { position: relative; direction: ltr; }
+  #chart { display: block; width: 100%; height: auto; }
+  #tooltip {
+    position: absolute; pointer-events: none; display: none; direction: rtl;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.14); padding: 8px 12px; font-size: 12px;
+    min-width: 190px; z-index: 5;
+  }
+  #tooltip .tt-title { font-weight: 700; margin-bottom: 5px; font-size: 12.5px; }
+  #tooltip .tt-row { display: flex; align-items: center; gap: 7px; padding: 1.5px 0; }
+  #tooltip .tt-key { width: 12px; height: 3px; border-radius: 2px; flex: 0 0 auto; }
+  #tooltip .tt-name { color: var(--text-secondary); flex: 1 1 auto; }
+  #tooltip .tt-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tblwrap { overflow: auto; max-height: 430px; border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; white-space: nowrap; }
+  thead th {
+    position: sticky; top: 0; background: var(--surface-1); z-index: 2;
+    border-bottom: 1px solid var(--baseline); padding: 7px 10px; text-align: center;
+    font-weight: 600; color: var(--text-secondary);
+  }
+  tbody td { border-bottom: 1px solid var(--grid); padding: 5px 10px; text-align: center; font-variant-numeric: tabular-nums; }
+  tbody td:first-child { text-align: right; color: var(--text-secondary); position: sticky; right: 0; background: var(--surface-1); }
+  thead th:first-child { position: sticky; right: 0; z-index: 3; }
+  .notes { font-size: 12px; color: var(--text-secondary); }
+  .notes ul { margin: 6px 0 0; padding-right: 18px; }
+  .notes li { margin-bottom: 3px; }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  .partial-note { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>پایش رقابتی مدیران دارایی در صندوق‌های سرمایه‌گذاری</h1>
+    <div class="sub">منبع: فیپ‌ایران (مرکز پردازش اطلاعات مالی ایران) · آخرین به‌روزرسانی: <span id="lastUpdate"></span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctl">
+        <span class="lbl">تناوب</span>
+        <span class="seg" id="segFreq">
+          <button data-v="monthly" class="on">ماهانه</button>
+          <button data-v="quarterly">فصلی</button>
+        </span>
+      </div>
+      <div class="ctl">
+        <span class="lbl">شاخص</span>
+        <span class="seg" id="segMeasure">
+          <button data-v="nav" class="on">خالص ارزش دارایی</button>
+          <button data-v="shareComp">سهم از رقبای خصوصی</button>
+          <button data-v="shareInd">سهم از کل صنعت</button>
+        </span>
+      </div>
+      <div class="ctl">
+        <span class="lbl">نوع صندوق</span>
+        <select id="selType"></select>
+      </div>
+      <div class="ctl">
+        <span class="lbl">شروع از</span>
+        <select id="selFrom"></select>
+      </div>
+      <div class="ctl" id="ctlScale">
+        <span class="lbl">مقیاس</span>
+        <select id="selScale">
+          <option value="1e9">میلیارد ریال</option>
+          <option value="1e12" selected>هزار میلیارد ریال (همت)</option>
+        </select>
+      </div>
+      <label class="chk"><input type="checkbox" id="chkExMM" checked> حذف صندوق‌های اختصاصی بازارگردانی</label>
+      <label class="chk"><input type="checkbox" id="chkLabels"> نمایش اعداد روی نمودار</label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="legend" id="legend"></div>
+    <div id="chartbox">
+      <svg id="chart" viewBox="0 0 1120 460" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="tooltip"></div>
+    </div>
+    <div class="partial-note" id="partialNote"></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="tblTitle">جدول داده</h2>
+    <div class="tblwrap"><table id="tbl"></table></div>
+  </div>
+
+  <div class="panel notes">
+    <h2>توضیحات و محدودیت‌های داده</h2>
+    <ul>
+      <li>ارزش هر ماه/فصل برابر آخرین روز موجودِ همان دوره شمسی است (مثلاً فصل بهار = آخرین روز خرداد).</li>
+      <li>رقبای خصوصی: مفید، آگاه، کاریزما، ترنج، اقتصاد بیدار، فارابی و توسعه فیروزه. «کل صنعت» شامل تمام مدیران است.</li>
+      <li>صندوق‌های منحل‌شده پیش از تیر ۱۴۰۵ در تاریخچه غایب‌اند؛ سهم بازار سال‌های قدیمی‌تر ممکن است اندکی کم‌برآورد باشد.</li>
+      <li>مدیر و نوع هر صندوق در کل تاریخچه بر اساس وضعیت فعلی آن است (فیپ‌ایران تاریخچه تغییر مدیر ارائه نمی‌دهد).</li>
+      <li>مقادیر صفر/منفیِ گزارش‌شده در منبع (خطای داده) حذف شده‌اند.</li>
+    </ul>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  "use strict";
+  const D = window.FUND_DATA;
+  const NCOMP = D.competitors.length;             // 7
+  const E_OTHERS = NCOMP;                          // index of "سایر مدیران" in D.entities
+  const MM = D.marketMakingType;                   // 11
+
+  // ---- entity/series registry (fixed colors — never repainted) ----
+  const css = getComputedStyle(document.documentElement);
+  const slot = i => css.getPropertyValue("--s" + (i + 1)).trim();
+  const SERIES = [];
+  D.competitors.forEach((name, i) => SERIES.push({ id: "c" + i, name, color: slot(i), kind: "comp", eIdx: i, on: true }));
+  SERIES.push({ id: "aggComp", name: "مجموع رقبای خصوصی", color: css.getPropertyValue("--agg-comp").trim(), kind: "aggComp", on: false });
+  SERIES.push({ id: "others", name: D.othersLabel, color: css.getPropertyValue("--agg-others").trim(), kind: "others", eIdx: E_OTHERS, on: false });
+  SERIES.push({ id: "aggInd", name: "مجموع کل صنعت", color: css.getPropertyValue("--agg-ind").trim(), kind: "aggInd", on: false });
+
+  // ---- state ----
+  const state = { freq: "monthly", measure: "nav", type: "all", from: 0, scale: 1e12, exMM: true, labels: false };
+
+  // ---- controls ----
+  const selType = document.getElementById("selType");
+  {
+    const optAll = document.createElement("option");
+    optAll.value = "all"; optAll.textContent = "همه انواع";
+    selType.appendChild(optAll);
+    Object.keys(D.types).sort((a, b) => +a - +b).forEach(t => {
+      const o = document.createElement("option");
+      o.value = t; o.textContent = D.types[t];
+      selType.appendChild(o);
+    });
+  }
+  const selFrom = document.getElementById("selFrom");
+  function rebuildFromOptions() {
+    const periods = state.freq === "monthly" ? D.months : D.quarters;
+    const labels = state.freq === "monthly" ? D.monthLabels : D.quarterLabels;
+    const years = [...new Set(periods.map(p => p.slice(0, 4)))];
+    selFrom.replaceChildren();
+    years.forEach(y => {
+      const o = document.createElement("option");
+      o.value = periods.findIndex(p => p.startsWith(y));
+      o.textContent = "سال " + y;
+      selFrom.appendChild(o);
+    });
+    selFrom.value = "0";
+    state.from = 0;
+    void labels;
+  }
+  rebuildFromOptions();
+
+  function segWire(el, key) {
+    el.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      el.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+      state[key] = b.dataset.v;
+      if (key === "freq") rebuildFromOptions();
+      render();
+    }));
+  }
+  segWire(document.getElementById("segFreq"), "freq");
+  segWire(document.getElementById("segMeasure"), "measure");
+  selType.addEventListener("change", () => { state.type = selType.value; render(); });
+  selFrom.addEventListener("change", () => { state.from = +selFrom.value; render(); });
+  document.getElementById("selScale").addEventListener("change", e => { state.scale = +e.target.value; render(); });
+  document.getElementById("chkExMM").addEventListener("change", e => { state.exMM = e.target.checked; render(); });
+  document.getElementById("chkLabels").addEventListener("change", e => { state.labels = e.target.checked; render(); });
+
+  document.getElementById("lastUpdate").textContent = D.generatedJalali + " (" + D.generatedGregorian + ")";
+
+  // ---- legend ----
+  const legendEl = document.getElementById("legend");
+  function buildLegend() {
+    legendEl.replaceChildren();
+    SERIES.forEach(s => {
+      const chip = document.createElement("span");
+      chip.className = "chip " + (s.on ? "on" : "off");
+      if (!seriesAvailable(s)) chip.classList.add("disabled");
+      const key = document.createElement("span");
+      key.className = "key"; key.style.background = s.color;
+      chip.appendChild(key);
+      chip.appendChild(document.createTextNode(s.name));
+      chip.addEventListener("click", () => { s.on = !s.on; render(); });
+      legendEl.appendChild(chip);
+    });
+  }
+  function seriesAvailable(s) {
+    if (state.measure === "shareComp") return s.kind === "comp";
+    if (state.measure === "shareInd") return s.kind !== "aggInd";
+    return true;
+  }
+
+  // ---- data pipeline ----
+  function computeMatrix() {
+    const rows = state.freq === "monthly" ? D.monthly : D.quarterly;
+    const periods = state.freq === "monthly" ? D.months : D.quarters;
+    const nP = periods.length, nE = D.entities.length;
+    const m = Array.from({ length: nP }, () => new Float64Array(nE));
+    const wantType = state.type === "all" ? null : +state.type;
+    for (const [p, e, t, v] of rows) {
+      if (wantType === null) {
+        if (state.exMM && t === MM) continue;
+      } else if (t !== wantType) continue;
+      m[p][e] += v;
+    }
+    return m;
+  }
+
+  function seriesValues(m) {
+    const nP = m.length;
+    const compTot = new Float64Array(nP), indTot = new Float64Array(nP);
+    for (let p = 0; p < nP; p++) {
+      for (let e = 0; e < NCOMP; e++) compTot[p] += m[p][e];
+      indTot[p] = compTot[p] + m[p][E_OTHERS];
+    }
+    const out = new Map();
+    for (const s of SERIES) {
+      const vals = new Float64Array(nP);
+      for (let p = 0; p < nP; p++) {
+        let nav;
+        if (s.kind === "comp" || s.kind === "others") nav = m[p][s.eIdx];
+        else if (s.kind === "aggComp") nav = compTot[p];
+        else nav = indTot[p];
+        if (state.measure === "nav") vals[p] = nav;
+        else if (state.measure === "shareComp") vals[p] = compTot[p] ? nav / compTot[p] * 100 : NaN;
+        else vals[p] = indTot[p] ? nav / indTot[p] * 100 : NaN;
+      }
+      out.set(s.id, vals);
+    }
+    return out;
+  }
+
+  // ---- formatting ----
+  const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+  const nf1 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
+  const nf2 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+  function fmtVal(v) {
+    if (!isFinite(v)) return "—";
+    if (state.measure !== "nav") return nf1.format(v) + "٪";
+    const x = v / state.scale;
+    return (x >= 100 ? nf0 : x >= 10 ? nf1 : nf2).format(x);
+  }
+  function fmtAxis(v) {
+    if (state.measure !== "nav") return nf0.format(v) + "٪";
+    return nf0.format(v / state.scale);
+  }
+
+  // ---- chart ----
+  const svg = document.getElementById("chart");
+  const tooltip = document.getElementById("tooltip");
+  const NS = "http://www.w3.org/2000/svg";
+  const W = 1120, H = 460, PAD = { l: 64, r: 24, t: 16, b: 44 };
+
+  function el(tag, attrs) {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+
+  let hover = null; // {xs, periodsIdx, visible, vals, labels}
+
+  function render() {
+    buildLegend();
+    document.getElementById("ctlScale").style.display = state.measure === "nav" ? "" : "none";
+    const exMMChk = document.getElementById("chkExMM");
+    exMMChk.disabled = state.type !== "all";
+
+    const periods = state.freq === "monthly" ? D.months : D.quarters;
+    const labels = state.freq === "monthly" ? D.monthLabels : D.quarterLabels;
+    const m = computeMatrix();
+    const vals = seriesValues(m);
+    const iFrom = state.from;
+    const idxs = [];
+    for (let p = iFrom; p < periods.length; p++) idxs.push(p);
+    const visible = SERIES.filter(s => s.on && seriesAvailable(s));
+
+    // y-domain
+    let ymax = 0;
+    for (const s of visible) {
+      const v = vals.get(s.id);
+      for (const p of idxs) if (isFinite(v[p]) && v[p] > ymax) ymax = v[p];
+    }
+    if (ymax <= 0) ymax = 1;
+    ymax *= 1.06;
+
+    const x = p => PAD.l + (idxs.length === 1 ? 0.5 : (p - iFrom) / (idxs.length - 1)) * (W - PAD.l - PAD.r);
+    const y = v => PAD.t + (1 - v / ymax) * (H - PAD.t - PAD.b);
+
+    svg.replaceChildren();
+
+    // gridlines + y ticks (clean steps)
+    const step = niceStep(ymax / 5);
+    for (let gv = 0; gv <= ymax; gv += step) {
+      const gy = y(gv);
+      svg.appendChild(el("line", { x1: PAD.l, x2: W - PAD.r, y1: gy, y2: gy, stroke: "var(--grid)", "stroke-width": 1 }));
+      const t = el("text", { x: PAD.l - 8, y: gy + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" });
+      t.textContent = fmtAxis(gv);
+      svg.appendChild(t);
+    }
+    // baseline
+    svg.appendChild(el("line", { x1: PAD.l, x2: W - PAD.r, y1: y(0), y2: y(0), stroke: "var(--baseline)", "stroke-width": 1 }));
+
+    // x ticks — sparse
+    const tickEvery = Math.max(1, Math.ceil(idxs.length / 10));
+    idxs.forEach((p, i) => {
+      if (i % tickEvery !== 0 && i !== idxs.length - 1) return;
+      const t = el("text", { x: x(p), y: H - PAD.b + 22, "text-anchor": "middle", "font-size": 10.5, fill: "var(--muted)" });
+      t.textContent = labels[p];
+      svg.appendChild(t);
+    });
+
+    // series lines
+    for (const s of visible) {
+      const v = vals.get(s.id);
+      let dPath = "";
+      for (const p of idxs) {
+        if (!isFinite(v[p])) continue;
+        dPath += (dPath ? "L" : "M") + x(p).toFixed(1) + "," + y(v[p]).toFixed(1);
+      }
+      svg.appendChild(el("path", { d: dPath, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      // end marker with surface ring
+      const last = idxs[idxs.length - 1];
+      if (isFinite(v[last])) {
+        svg.appendChild(el("circle", { cx: x(last), cy: y(v[last]), r: 4.5, fill: s.color, stroke: "var(--surface-1)", "stroke-width": 2 }));
+      }
+    }
+
+    // value labels (adaptive: all points if few, else sparse + endpoint)
+    if (state.labels) {
+      const every = idxs.length <= 16 ? 1 : Math.ceil(idxs.length / 12);
+      for (const s of visible) {
+        const v = vals.get(s.id);
+        idxs.forEach((p, i) => {
+          if (i % every !== 0 && i !== idxs.length - 1) return;
+          if (!isFinite(v[p])) return;
+          const t = el("text", {
+            x: x(p), y: y(v[p]) - 8, "text-anchor": "middle", "font-size": 10,
+            fill: "var(--text-secondary)", "paint-order": "stroke",
+            stroke: "var(--surface-1)", "stroke-width": 3
+          });
+          t.textContent = fmtVal(v[p]);
+          svg.appendChild(t);
+        });
+      }
+    }
+
+    // crosshair layer
+    const cross = el("line", { x1: 0, x2: 0, y1: PAD.t, y2: H - PAD.b, stroke: "var(--baseline)", "stroke-width": 1, visibility: "hidden" });
+    svg.appendChild(cross);
+    hover = { idxs, x, labels, visible, vals, cross };
+
+    renderTable(idxs, labels, visible, vals);
+
+    // partial-period note
+    const lastLbl = labels[periods.length - 1];
+    document.getElementById("partialNote").textContent =
+      "دوره پایانی (" + lastLbl + ") تا " + D.generatedJalali + " است و ممکن است کامل نباشد.";
+
+    const scaleName = state.scale === 1e12 ? "هزار میلیارد ریال (همت)" : "میلیارد ریال";
+    document.getElementById("tblTitle").textContent =
+      state.measure === "nav" ? "جدول داده — خالص ارزش دارایی (" + scaleName + ")" :
+      state.measure === "shareComp" ? "جدول داده — سهم از رقبای خصوصی (درصد)" :
+      "جدول داده — سهم از کل صنعت (درصد)";
+  }
+
+  function niceStep(raw) {
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const n = raw / mag;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * mag;
+  }
+
+  // ---- tooltip ----
+  const box = document.getElementById("chartbox");
+  box.addEventListener("pointermove", ev => {
+    if (!hover || !hover.visible.length) return;
+    const r = svg.getBoundingClientRect();
+    const sx = (ev.clientX - r.left) * (W / r.width);
+    // nearest period
+    let best = hover.idxs[0], bd = Infinity;
+    for (const p of hover.idxs) {
+      const d = Math.abs(hover.x(p) - sx);
+      if (d < bd) { bd = d; best = p; }
+    }
+    hover.cross.setAttribute("x1", hover.x(best));
+    hover.cross.setAttribute("x2", hover.x(best));
+    hover.cross.setAttribute("visibility", "visible");
+
+    tooltip.replaceChildren();
+    const ttT = document.createElement("div");
+    ttT.className = "tt-title"; ttT.textContent = hover.labels[best];
+    tooltip.appendChild(ttT);
+    const rows = hover.visible
+      .map(s => ({ s, v: hover.vals.get(s.id)[best] }))
+      .sort((a, b) => (b.v || 0) - (a.v || 0));
+    for (const { s, v } of rows) {
+      const row = document.createElement("div"); row.className = "tt-row";
+      const k = document.createElement("span"); k.className = "tt-key"; k.style.background = s.color;
+      const nm = document.createElement("span"); nm.className = "tt-name"; nm.textContent = s.name;
+      const vl = document.createElement("span"); vl.className = "tt-val"; vl.textContent = fmtVal(v);
+      row.append(k, nm, vl);
+      tooltip.appendChild(row);
+    }
+    tooltip.style.display = "block";
+    const bw = box.clientWidth, tw = tooltip.offsetWidth;
+    let left = (hover.x(best) / W) * bw + 14;
+    if (left + tw > bw - 4) left = (hover.x(best) / W) * bw - tw - 14;
+    tooltip.style.left = Math.max(4, left) + "px";
+    tooltip.style.top = Math.max(4, ev.clientY - r.top - 30) + "px";
+  });
+  box.addEventListener("pointerleave", () => {
+    tooltip.style.display = "none";
+    if (hover) hover.cross.setAttribute("visibility", "hidden");
+  });
+
+  // ---- table ----
+  function renderTable(idxs, labels, visible, vals) {
+    const tbl = document.getElementById("tbl");
+    tbl.replaceChildren();
+    const thead = document.createElement("thead");
+    const hr = document.createElement("tr");
+    const h0 = document.createElement("th"); h0.textContent = "دوره";
+    hr.appendChild(h0);
+    for (const s of visible) {
+      const th = document.createElement("th"); th.textContent = s.name;
+      hr.appendChild(th);
+    }
+    thead.appendChild(hr); tbl.appendChild(thead);
+    const tbody = document.createElement("tbody");
+    for (let i = idxs.length - 1; i >= 0; i--) {
+      const p = idxs[i];
+      const tr = document.createElement("tr");
+      const td0 = document.createElement("td"); td0.textContent = labels[p];
+      tr.appendChild(td0);
+      for (const s of visible) {
+        const td = document.createElement("td");
+        td.textContent = fmtVal(vals.get(s.id)[p]);
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
