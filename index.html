@@ -20,6 +20,9 @@
     --agg-others: #898781;
     --agg-ind: #0b0b0b;
     --chip-on: #eef3fb;
+    --row-alt: #f1f1ee;
+    --cell-hover: #dbe7f8;
+    --agah-tint: rgba(27,175,122,0.13);
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -37,6 +40,9 @@
       --agg-others: #898781;
       --agg-ind: #ffffff;
       --chip-on: #24303f;
+      --row-alt: #222221;
+      --cell-hover: #2b3a50;
+      --agah-tint: rgba(25,158,112,0.18);
     }
   }
   @font-face {
@@ -116,9 +122,14 @@
     border-bottom: 1px solid var(--baseline); padding: 7px 10px; text-align: center;
     font-weight: 600; color: var(--text-secondary);
   }
-  tbody td { border-bottom: 1px solid var(--grid); padding: 5px 10px; text-align: center; font-variant-numeric: tabular-nums; }
-  tbody td:first-child { text-align: right; color: var(--text-secondary); position: sticky; right: 0; background: var(--surface-1); }
+  tbody td { border-bottom: 1px solid var(--grid); padding: 5px 10px; text-align: center; font-variant-numeric: tabular-nums; background: var(--surface-1); }
+  tbody tr:nth-child(even) td { background: var(--row-alt); }
+  tbody td:first-child { text-align: right; color: var(--text-secondary); position: sticky; right: 0; }
   thead th:first-child { position: sticky; right: 0; z-index: 3; }
+  th.agah, td.agah { background-image: linear-gradient(var(--agah-tint), var(--agah-tint)); }
+  th.agah { color: var(--text-primary); }
+  td.agah { font-weight: 600; }
+  tbody td:hover { background-color: var(--cell-hover); }
   .notes { font-size: 12px; color: var(--text-secondary); }
   .notes ul { margin: 6px 0 0; padding-right: 18px; }
   .notes li { margin-bottom: 3px; }
@@ -519,6 +530,7 @@
     hr.appendChild(h0);
     for (const s of visible) {
       const th = document.createElement("th"); th.textContent = s.name;
+      if (s.name.includes("آگاه")) th.classList.add("agah");
       hr.appendChild(th);
     }
     thead.appendChild(hr); tbl.appendChild(thead);
@@ -531,6 +543,7 @@
       for (const s of visible) {
         const td = document.createElement("td");
         td.textContent = fmtVal(vals.get(s.id)[p]);
+        if (s.name.includes("آگاه")) td.classList.add("agah");
         tr.appendChild(td);
       }
       tbody.appendChild(tr);
