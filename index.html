@@ -102,19 +102,34 @@
   .chip.off .key { opacity: .25; }
   .chip .key { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
   .chip.disabled { opacity: .35; pointer-events: none; }
-  #chartbox { position: relative; direction: ltr; }
-  #chart { display: block; width: 100%; height: auto; }
-  #tooltip {
+  #chartbox, #chartbox2 { position: relative; direction: ltr; }
+  #chart, #chart2 { display: block; width: 100%; height: auto; }
+  .ttbox {
     position: absolute; pointer-events: none; display: none; direction: rtl;
     background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
     box-shadow: 0 4px 14px rgba(0,0,0,.14); padding: 8px 12px; font-size: 12px;
     min-width: 190px; z-index: 5;
   }
-  #tooltip .tt-title { font-weight: 700; margin-bottom: 5px; font-size: 12.5px; }
-  #tooltip .tt-row { display: flex; align-items: center; gap: 7px; padding: 1.5px 0; }
-  #tooltip .tt-key { width: 12px; height: 3px; border-radius: 2px; flex: 0 0 auto; }
-  #tooltip .tt-name { color: var(--text-secondary); flex: 1 1 auto; }
-  #tooltip .tt-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ttbox .tt-title { font-weight: 700; margin-bottom: 5px; font-size: 12.5px; }
+  .ttbox .tt-row { display: flex; align-items: center; gap: 7px; padding: 1.5px 0; }
+  .ttbox .tt-key { width: 12px; height: 3px; border-radius: 2px; flex: 0 0 auto; }
+  .ttbox .tt-name { color: var(--text-secondary); flex: 1 1 auto; }
+  .ttbox .tt-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .msel { position: relative; display: inline-block; }
+  .msel-btn {
+    font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+    min-width: 150px; text-align: right;
+  }
+  .msel-pop {
+    position: absolute; top: calc(100% + 4px); right: 0; z-index: 10; display: none;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.16); padding: 8px 12px;
+    max-height: 280px; overflow: auto; min-width: 230px;
+  }
+  .msel.open .msel-pop { display: block; }
+  .msel-pop label { display: flex; align-items: center; gap: 7px; font-size: 12.5px; padding: 3px 0; cursor: pointer; white-space: nowrap; }
+  .msel-pop hr { border: 0; border-top: 1px solid var(--grid); margin: 6px 0; }
   .tblwrap { overflow: auto; max-height: 430px; border: 1px solid var(--border); border-radius: 8px; }
   table { border-collapse: collapse; width: 100%; font-size: 12.5px; white-space: nowrap; }
   thead th {
@@ -122,14 +137,14 @@
     border-bottom: 1px solid var(--baseline); padding: 7px 10px; text-align: center;
     font-weight: 600; color: var(--text-secondary);
   }
-  tbody td { border-bottom: 1px solid var(--grid); padding: 5px 10px; text-align: center; font-variant-numeric: tabular-nums; background: var(--surface-1); }
-  tbody tr:nth-child(even) td { background: var(--row-alt); }
+  tbody td { border-bottom: 1px solid var(--grid); padding: 5px 10px; text-align: center; font-variant-numeric: tabular-nums; background-color: var(--surface-1); }
+  tbody tr:nth-child(even) td { background-color: var(--row-alt); }
   tbody td:first-child { text-align: right; color: var(--text-secondary); position: sticky; right: 0; }
   thead th:first-child { position: sticky; right: 0; z-index: 3; }
   th.agah, td.agah { background-image: linear-gradient(var(--agah-tint), var(--agah-tint)); }
   th.agah { color: var(--text-primary); }
   td.agah { font-weight: 600; }
-  tbody td:hover { background-color: var(--cell-hover); }
+  tbody tr td:hover { background-color: var(--cell-hover); }
   .notes { font-size: 12px; color: var(--text-secondary); }
   .notes ul { margin: 6px 0 0; padding-right: 18px; }
   .notes li { margin-bottom: 3px; }
@@ -163,7 +178,10 @@
       </div>
       <div class="ctl">
         <span class="lbl">نوع صندوق</span>
-        <select id="selType"></select>
+        <span class="msel" id="mselType">
+          <button type="button" class="msel-btn" id="mselBtn">همه انواع</button>
+          <span class="msel-pop" id="mselPop"></span>
+        </span>
       </div>
       <div class="ctl">
         <span class="lbl">شروع از</span>
@@ -173,7 +191,8 @@
         <span class="lbl">مقیاس</span>
         <select id="selScale">
           <option value="1e9">میلیارد ریال</option>
-          <option value="1e12" selected>هزار میلیارد ریال (همت)</option>
+          <option value="1e12">هزار میلیارد ریال</option>
+          <option value="1e13" selected>همت (هزار میلیارد تومان)</option>
         </select>
       </div>
       <label class="chk"><input type="checkbox" id="chkExMM" checked> حذف صندوق‌های اختصاصی بازارگردانی</label>
@@ -185,7 +204,7 @@
     <div class="legend" id="legend"></div>
     <div id="chartbox">
       <svg id="chart" viewBox="0 0 1120 460" xmlns="http://www.w3.org/2000/svg"></svg>
-      <div id="tooltip"></div>
+      <div id="tooltip" class="ttbox"></div>
     </div>
     <div class="partial-note" id="partialNote"></div>
   </div>
@@ -193,6 +212,21 @@
   <div class="panel">
     <h2 id="tblTitle">جدول داده</h2>
     <div class="tblwrap"><table id="tbl"></table></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="stackTitle">ترکیب دارایی سبدگردان بر حسب نوع صندوق</h2>
+    <div class="controls" style="margin-bottom: 10px">
+      <div class="ctl">
+        <span class="lbl">سبدگردان</span>
+        <select id="selMgr"></select>
+      </div>
+    </div>
+    <div class="legend" id="legend2"></div>
+    <div id="chartbox2">
+      <svg id="chart2" viewBox="0 0 1120 460" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="tooltip2" class="ttbox"></div>
+    </div>
   </div>
 
   <div class="panel notes">
@@ -203,6 +237,7 @@
       <li>صندوق‌های منحل‌شده پیش از تیر ۱۴۰۵ در تاریخچه غایب‌اند؛ سهم بازار سال‌های قدیمی‌تر ممکن است اندکی کم‌برآورد باشد.</li>
       <li>مدیر و نوع هر صندوق در کل تاریخچه بر اساس وضعیت فعلی آن است (فیپ‌ایران تاریخچه تغییر مدیر ارائه نمی‌دهد).</li>
       <li>مقادیر صفر/منفیِ گزارش‌شده در منبع (خطای داده) حذف شده‌اند.</li>
+      <li>تاریخچه برخی صندوق‌ها در داده فعلی ناقص است؛ ازجمله صندوق کالایی مثقال (آگاه) که با وجود فعالیت از ۱۴۰۰، داده‌اش از اسفند ۱۴۰۲ آغاز می‌شود.</li>
     </ul>
   </div>
 </div>
@@ -219,27 +254,58 @@
   // ---- entity/series registry (fixed colors — never repainted) ----
   const css = getComputedStyle(document.documentElement);
   const slot = i => css.getPropertyValue("--s" + (i + 1)).trim();
+  const SHORT_NAMES = ["مفید", "آگاه", "کاریزما", "ترنج", "اقتصاد بیدار", "فارابی", "فیروزه"];
   const SERIES = [];
-  D.competitors.forEach((name, i) => SERIES.push({ id: "c" + i, name, color: slot(i), kind: "comp", eIdx: i, on: true }));
-  SERIES.push({ id: "aggComp", name: "مجموع رقبای خصوصی", color: css.getPropertyValue("--agg-comp").trim(), kind: "aggComp", on: false });
-  SERIES.push({ id: "others", name: D.othersLabel, color: css.getPropertyValue("--agg-others").trim(), kind: "others", eIdx: E_OTHERS, on: false });
-  SERIES.push({ id: "aggInd", name: "مجموع کل صنعت", color: css.getPropertyValue("--agg-ind").trim(), kind: "aggInd", on: false });
+  D.competitors.forEach((name, i) => SERIES.push({ id: "c" + i, name, short: SHORT_NAMES[i] || name, color: slot(i), kind: "comp", eIdx: i, on: true }));
+  SERIES.push({ id: "aggComp", name: "مجموع رقبای خصوصی", short: "مجموع رقبا", color: css.getPropertyValue("--agg-comp").trim(), kind: "aggComp", on: false });
+  SERIES.push({ id: "others", name: D.othersLabel, short: D.othersLabel, color: css.getPropertyValue("--agg-others").trim(), kind: "others", eIdx: E_OTHERS, on: false });
+  SERIES.push({ id: "aggInd", name: "مجموع کل صنعت", short: "کل صنعت", color: css.getPropertyValue("--agg-ind").trim(), kind: "aggInd", on: false });
 
   // ---- state ----
-  const state = { freq: "monthly", measure: "nav", type: "all", from: 0, scale: 1e12, exMM: true, labels: false };
+  // state.types: null = all types; otherwise a Set of numeric type ids
+  const state = { freq: "monthly", measure: "nav", types: null, from: 0, scale: 1e13, exMM: true, labels: false };
 
-  // ---- controls ----
-  const selType = document.getElementById("selType");
+  // ---- controls: fund-type multi-select ----
+  const msel = document.getElementById("mselType");
+  const mselBtn = document.getElementById("mselBtn");
+  const mselPop = document.getElementById("mselPop");
+  const TYPE_KEYS = Object.keys(D.types).sort((a, b) => +a - +b).map(Number);
+  const typeChecks = new Map();
+  let allCheck;
   {
-    const optAll = document.createElement("option");
-    optAll.value = "all"; optAll.textContent = "همه انواع";
-    selType.appendChild(optAll);
-    Object.keys(D.types).sort((a, b) => +a - +b).forEach(t => {
-      const o = document.createElement("option");
-      o.value = t; o.textContent = D.types[t];
-      selType.appendChild(o);
+    const lab = document.createElement("label");
+    allCheck = document.createElement("input");
+    allCheck.type = "checkbox"; allCheck.checked = true;
+    lab.append(allCheck, document.createTextNode("همه انواع"));
+    mselPop.appendChild(lab);
+    mselPop.appendChild(document.createElement("hr"));
+    TYPE_KEYS.forEach(t => {
+      const l = document.createElement("label");
+      const c = document.createElement("input");
+      c.type = "checkbox"; c.checked = true;
+      typeChecks.set(t, c);
+      l.append(c, document.createTextNode(D.types[t]));
+      mselPop.appendChild(l);
     });
   }
+  function syncTypesFromChecks() {
+    const on = TYPE_KEYS.filter(t => typeChecks.get(t).checked);
+    if (on.length === TYPE_KEYS.length) { state.types = null; allCheck.checked = true; }
+    else { state.types = new Set(on); allCheck.checked = false; }
+    mselBtn.textContent =
+      state.types === null ? "همه انواع" :
+      state.types.size === 0 ? "هیچ‌کدام" :
+      state.types.size === 1 ? D.types[[...state.types][0]] :
+      state.types.size + " نوع انتخاب‌شده";
+  }
+  allCheck.addEventListener("change", () => {
+    TYPE_KEYS.forEach(t => { typeChecks.get(t).checked = allCheck.checked; });
+    syncTypesFromChecks(); render();
+  });
+  typeChecks.forEach(c => c.addEventListener("change", () => { syncTypesFromChecks(); render(); }));
+  mselBtn.addEventListener("click", e => { e.stopPropagation(); msel.classList.toggle("open"); });
+  mselPop.addEventListener("click", e => e.stopPropagation());
+  document.addEventListener("click", () => msel.classList.remove("open"));
   const selFrom = document.getElementById("selFrom");
   function rebuildFromOptions() {
     const periods = state.freq === "monthly" ? D.months : D.quarters;
@@ -268,7 +334,6 @@
   }
   segWire(document.getElementById("segFreq"), "freq");
   segWire(document.getElementById("segMeasure"), "measure");
-  selType.addEventListener("change", () => { state.type = selType.value; render(); });
   selFrom.addEventListener("change", () => { state.from = +selFrom.value; render(); });
   document.getElementById("selScale").addEventListener("change", e => { state.scale = +e.target.value; render(); });
   document.getElementById("chkExMM").addEventListener("change", e => { state.exMM = e.target.checked; render(); });
@@ -287,7 +352,7 @@
       const key = document.createElement("span");
       key.className = "key"; key.style.background = s.color;
       chip.appendChild(key);
-      chip.appendChild(document.createTextNode(s.name));
+      chip.appendChild(document.createTextNode(s.short));
       chip.addEventListener("click", () => { s.on = !s.on; render(); });
       legendEl.appendChild(chip);
     });
@@ -304,11 +369,11 @@
     const periods = state.freq === "monthly" ? D.months : D.quarters;
     const nP = periods.length, nE = D.entities.length;
     const m = Array.from({ length: nP }, () => new Float64Array(nE));
-    const wantType = state.type === "all" ? null : +state.type;
+    const want = state.types;
     for (const [p, e, t, v] of rows) {
-      if (wantType === null) {
+      if (want === null) {
         if (state.exMM && t === MM) continue;
-      } else if (t !== wantType) continue;
+      } else if (!want.has(t)) continue;
       m[p][e] += v;
     }
     return m;
@@ -371,7 +436,7 @@
     buildLegend();
     document.getElementById("ctlScale").style.display = state.measure === "nav" ? "" : "none";
     const exMMChk = document.getElementById("chkExMM");
-    exMMChk.disabled = state.type !== "all";
+    exMMChk.disabled = state.types !== null;
 
     const periods = state.freq === "monthly" ? D.months : D.quarters;
     const labels = state.freq === "monthly" ? D.monthLabels : D.quarterLabels;
@@ -464,11 +529,14 @@
     document.getElementById("partialNote").textContent =
       "دوره پایانی (" + lastLbl + ") تا " + D.generatedJalali + " است و ممکن است کامل نباشد.";
 
-    const scaleName = state.scale === 1e12 ? "هزار میلیارد ریال (همت)" : "میلیارد ریال";
+    const scaleName = state.scale === 1e13 ? "همت — هزار میلیارد تومان" :
+      state.scale === 1e12 ? "هزار میلیارد ریال" : "میلیارد ریال";
     document.getElementById("tblTitle").textContent =
       state.measure === "nav" ? "جدول داده — خالص ارزش دارایی (" + scaleName + ")" :
       state.measure === "shareComp" ? "جدول داده — سهم از رقبای خصوصی (درصد)" :
       "جدول داده — سهم از کل صنعت (درصد)";
+
+    renderStacked(scaleName);
   }
 
   function niceStep(raw) {
@@ -503,7 +571,7 @@
     for (const { s, v } of rows) {
       const row = document.createElement("div"); row.className = "tt-row";
       const k = document.createElement("span"); k.className = "tt-key"; k.style.background = s.color;
-      const nm = document.createElement("span"); nm.className = "tt-name"; nm.textContent = s.name;
+      const nm = document.createElement("span"); nm.className = "tt-name"; nm.textContent = s.short;
       const vl = document.createElement("span"); vl.className = "tt-val"; vl.textContent = fmtVal(v);
       row.append(k, nm, vl);
       tooltip.appendChild(row);
@@ -550,6 +618,175 @@
     }
     tbl.appendChild(tbody);
   }
+
+  // ---- stacked chart: one manager over time, by fund type ----
+  const PALETTE2 = ["#2a78d6", "#1baf7a", "#eda100", "#e34948", "#4a3aa7", "#e87ba4",
+    "#eb6834", "#008300", "#00a3a3", "#8a6d3b", "#6d8f00", "#9e4bbf", "#c2185b", "#5d6d7e", "#b3541e"];
+  const typeColor = t => PALETTE2[TYPE_KEYS.indexOf(t) % PALETTE2.length];
+  const selMgr = document.getElementById("selMgr");
+  {
+    D.competitors.forEach((name, i) => {
+      const o = document.createElement("option");
+      o.value = i; o.textContent = name;
+      selMgr.appendChild(o);
+    });
+    const o = document.createElement("option");
+    o.value = E_OTHERS; o.textContent = D.othersLabel;
+    selMgr.appendChild(o);
+    selMgr.value = "1"; // سبدگردان آگاه
+  }
+  const svg2 = document.getElementById("chart2");
+  const tooltip2 = document.getElementById("tooltip2");
+  const box2 = document.getElementById("chartbox2");
+  const legend2El = document.getElementById("legend2");
+  const typeOff = new Set();
+  let hover2 = null;
+  const fmtNav = v => {
+    if (!isFinite(v)) return "—";
+    const x = v / state.scale;
+    return (x >= 100 ? nf0 : x >= 10 ? nf1 : nf2).format(x);
+  };
+
+  function renderStacked() {
+    const periods = state.freq === "monthly" ? D.months : D.quarters;
+    const labels = state.freq === "monthly" ? D.monthLabels : D.quarterLabels;
+    const rows = state.freq === "monthly" ? D.monthly : D.quarterly;
+    const eSel = +selMgr.value;
+    const nP = periods.length;
+
+    const byType = new Map();
+    for (const [p, e, t, v] of rows) {
+      if (e !== eSel) continue;
+      let a = byType.get(t);
+      if (!a) { a = new Float64Array(nP); byType.set(t, a); }
+      a[p] += v;
+    }
+    const idxs = [];
+    for (let p = state.from; p < nP; p++) idxs.push(p);
+
+    // types with data in the window, biggest total first (bottom of the stack)
+    const present = [...byType.keys()]
+      .map(t => ({ t, tot: idxs.reduce((s, p) => s + byType.get(t)[p], 0) }))
+      .filter(x => x.tot > 0)
+      .sort((a, b) => b.tot - a.tot)
+      .map(x => x.t);
+
+    // legend
+    legend2El.replaceChildren();
+    present.forEach(t => {
+      const chip = document.createElement("span");
+      chip.className = "chip " + (typeOff.has(t) ? "off" : "on");
+      const key = document.createElement("span");
+      key.className = "key"; key.style.background = typeColor(t);
+      chip.append(key, document.createTextNode(D.types[t]));
+      chip.addEventListener("click", () => {
+        typeOff.has(t) ? typeOff.delete(t) : typeOff.add(t);
+        renderStacked();
+      });
+      legend2El.appendChild(chip);
+    });
+
+    const active = present.filter(t => !typeOff.has(t));
+
+    let ymax = 0;
+    for (const p of idxs) {
+      let s = 0;
+      for (const t of active) s += byType.get(t)[p];
+      if (s > ymax) ymax = s;
+    }
+    if (ymax <= 0) ymax = 1;
+    ymax *= 1.06;
+
+    const x = p => PAD.l + (idxs.length === 1 ? 0.5 : (p - state.from) / (idxs.length - 1)) * (W - PAD.l - PAD.r);
+    const y = v => PAD.t + (1 - v / ymax) * (H - PAD.t - PAD.b);
+
+    svg2.replaceChildren();
+
+    const step = niceStep(ymax / 5);
+    for (let gv = 0; gv <= ymax; gv += step) {
+      const gy = y(gv);
+      svg2.appendChild(el("line", { x1: PAD.l, x2: W - PAD.r, y1: gy, y2: gy, stroke: "var(--grid)", "stroke-width": 1 }));
+      const tx = el("text", { x: PAD.l - 8, y: gy + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" });
+      tx.textContent = nf0.format(gv / state.scale);
+      svg2.appendChild(tx);
+    }
+    svg2.appendChild(el("line", { x1: PAD.l, x2: W - PAD.r, y1: y(0), y2: y(0), stroke: "var(--baseline)", "stroke-width": 1 }));
+
+    const tickEvery = Math.max(1, Math.ceil(idxs.length / 10));
+    idxs.forEach((p, i) => {
+      if (i % tickEvery !== 0 && i !== idxs.length - 1) return;
+      const tx = el("text", { x: x(p), y: H - PAD.b + 22, "text-anchor": "middle", "font-size": 10.5, fill: "var(--muted)" });
+      tx.textContent = labels[p];
+      svg2.appendChild(tx);
+    });
+
+    const bw = Math.max(2, (W - PAD.l - PAD.r) / Math.max(idxs.length, 1) * 0.72);
+    for (const p of idxs) {
+      let cum = 0;
+      for (const t of active) {
+        const v = byType.get(t)[p];
+        if (v <= 0) continue;
+        const y1 = y(cum + v), y0 = y(cum);
+        svg2.appendChild(el("rect", {
+          x: (x(p) - bw / 2).toFixed(1), y: y1.toFixed(1),
+          width: bw.toFixed(1), height: Math.max(0.5, y0 - y1).toFixed(1),
+          fill: typeColor(t)
+        }));
+        cum += v;
+      }
+    }
+
+    hover2 = { idxs, x, labels, active, byType };
+
+    const scaleName = state.scale === 1e13 ? "همت — هزار میلیارد تومان" :
+      state.scale === 1e12 ? "هزار میلیارد ریال" : "میلیارد ریال";
+    const mgrName = eSel === E_OTHERS ? D.othersLabel : D.competitors[eSel];
+    document.getElementById("stackTitle").textContent =
+      "ترکیب دارایی " + mgrName + " بر حسب نوع صندوق (" + scaleName + ")";
+  }
+  selMgr.addEventListener("change", renderStacked);
+
+  box2.addEventListener("pointermove", ev => {
+    if (!hover2 || !hover2.idxs.length) return;
+    const r = svg2.getBoundingClientRect();
+    const sx = (ev.clientX - r.left) * (W / r.width);
+    let best = hover2.idxs[0], bd = Infinity;
+    for (const p of hover2.idxs) {
+      const d = Math.abs(hover2.x(p) - sx);
+      if (d < bd) { bd = d; best = p; }
+    }
+    tooltip2.replaceChildren();
+    const ttT = document.createElement("div");
+    ttT.className = "tt-title"; ttT.textContent = hover2.labels[best];
+    tooltip2.appendChild(ttT);
+    let total = 0;
+    const items = hover2.active
+      .map(t => ({ t, v: hover2.byType.get(t)[best] }))
+      .filter(x => x.v > 0)
+      .sort((a, b) => b.v - a.v);
+    for (const { t, v } of items) {
+      total += v;
+      const row = document.createElement("div"); row.className = "tt-row";
+      const k = document.createElement("span"); k.className = "tt-key"; k.style.background = typeColor(t);
+      const nm = document.createElement("span"); nm.className = "tt-name"; nm.textContent = D.types[t];
+      const vl = document.createElement("span"); vl.className = "tt-val"; vl.textContent = fmtNav(v);
+      row.append(k, nm, vl);
+      tooltip2.appendChild(row);
+    }
+    const rowT = document.createElement("div"); rowT.className = "tt-row";
+    const nmT = document.createElement("span"); nmT.className = "tt-name"; nmT.textContent = "مجموع";
+    const vlT = document.createElement("span"); vlT.className = "tt-val"; vlT.textContent = fmtNav(total);
+    rowT.append(nmT, vlT);
+    tooltip2.appendChild(rowT);
+
+    tooltip2.style.display = "block";
+    const bw2 = box2.clientWidth, tw = tooltip2.offsetWidth;
+    let left = (hover2.x(best) / W) * bw2 + 14;
+    if (left + tw > bw2 - 4) left = (hover2.x(best) / W) * bw2 - tw - 14;
+    tooltip2.style.left = Math.max(4, left) + "px";
+    tooltip2.style.top = Math.max(4, ev.clientY - r.top - 30) + "px";
+  });
+  box2.addEventListener("pointerleave", () => { tooltip2.style.display = "none"; });
 
   render();
 })();
