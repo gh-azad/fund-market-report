@@ -844,12 +844,28 @@
     }
   }
 
+  // normalize raw FIPIRAN manager strings exactly like the Python pipeline:
+  // unify ي/ك -> ی/ک, strip diacritics/tatweel, ZWNJ -> space, drop legal-form
+  // suffixes like (سهامی خاص), collapse whitespace — then apply the alias map.
+  function cleanName(s) {
+    if (!s) return "";
+    s = s.normalize("NFKC").replace(/[يى]/g, "ی").replace(/ك/g, "ک");
+    s = s.replace(/[ً-ٟـ]/g, "");
+    s = s.replace(/[‌ ]/g, " ");
+    s = s.replace(/\(\s*سهامی\s*(خاص|عام)\s*\)/g, "").replace(/سهامی\s*(خاص|عام)/g, "");
+    return s.replace(/\s+/g, " ").trim();
+  }
+  function canonicalManager(raw) {
+    const c = cleanName(raw);
+    return (D.aliasLookup && D.aliasLookup[c]) || c;
+  }
+
   function renderToday() {
     if (!todayItems) return;
     const eSel = +selMgr2.value;
-    const kw = SHORT_NAMES[eSel];
+    const target = D.competitors[eSel];
     const funds = todayItems
-      .filter(f => (f.manager || "").includes(kw))
+      .filter(f => canonicalManager(f.manager) === target)
       .sort((a, b) => b.netAsset - a.netAsset);
     const total = funds.reduce((s, f) => s + (f.netAsset || 0), 0);
 
