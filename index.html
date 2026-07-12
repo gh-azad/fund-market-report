@@ -840,7 +840,7 @@
       const j = await r.json();
       if (!j.items || !j.items.length) throw new Error("empty");
       todayItems = j.items;
-      note.textContent = "منبع: فیپ‌ایران (به‌روزرسانی خودکار روزانه). بازدهی‌ها درصد است.";
+      note.textContent = "منبع: فیپ‌ایران (به‌روزرسانی خودکار روزانه). بازدهی‌ها درصد است. خالص ارزش صندوق‌های چند-NAV (مانند بخشی صنایع آگاه) از تارنمای خود صندوق تجمیع می‌شود.";
       renderToday();
     } catch (e) {
       note.textContent = "دریافت داده روز از فیپ‌ایران ممکن نشد. بعداً دوباره امتحان کنید.";
