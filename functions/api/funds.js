@@ -21,9 +21,12 @@ export async function onRequest(context) {
   try {
     upstream = await fetch(UPSTREAM, { headers: UPSTREAM_HEADERS });
   } catch (e) {
-    return json({ error: "upstream unreachable" }, 502);
+    return json({ error: "upstream unreachable", detail: String(e && e.message || e) }, 503);
   }
-  if (!upstream.ok) return json({ error: "upstream status " + upstream.status }, 502);
+  if (!upstream.ok) {
+    const snippet = (await upstream.text().catch(() => "")).slice(0, 200);
+    return json({ error: "upstream status " + upstream.status, snippet }, 503);
+  }
 
   const body = await upstream.text();
   res = new Response(body, {
