@@ -830,9 +830,12 @@
     "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
 
   async function loadToday() {
+    // today.json is refreshed daily by the local pipeline and pushed to the
+    // repo (FIPIRAN's origin only answers Iranian IPs, so an edge-side proxy
+    // cannot fetch it — see scripts/make_today.py).
     const note = document.getElementById("todayNote");
     try {
-      const r = await fetch("api/funds");
+      const r = await fetch("today.json");
       if (!r.ok) throw new Error("status " + r.status);
       const j = await r.json();
       if (!j.items || !j.items.length) throw new Error("empty");
@@ -840,7 +843,7 @@
       note.textContent = "منبع: فیپ‌ایران (به‌روزرسانی خودکار روزانه). بازدهی‌ها درصد است.";
       renderToday();
     } catch (e) {
-      note.textContent = "دریافت داده زنده از فیپ‌ایران ممکن نشد. بعداً دوباره امتحان کنید.";
+      note.textContent = "دریافت داده روز از فیپ‌ایران ممکن نشد. بعداً دوباره امتحان کنید.";
     }
   }
 
