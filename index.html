@@ -883,12 +883,17 @@
     thead.appendChild(hr); tbl.appendChild(thead);
 
     const tbody = document.createElement("tbody");
-    const addRow = (cells, bold) => {
+    const addRow = (cells, bold, sub) => {
       const tr = document.createElement("tr");
       cells.forEach((c, i) => {
         const td = document.createElement("td");
         td.textContent = c;
         if (bold) td.style.fontWeight = "700";
+        if (sub) {
+          td.style.color = "var(--muted)";
+          td.style.fontSize = "11.5px";
+          if (i === 0) td.style.paddingRight = "26px";
+        }
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -903,6 +908,17 @@
         pct(f.monthlyEfficiency),
         pct(f.annualEfficiency)
       ]);
+      // multi-NAV funds: show each component as an indented sub-row
+      for (const c of (f.components || [])) {
+        addRow([
+          "└ " + c.name,
+          "",
+          fmtNav(c.netAsset),
+          f.netAsset ? nf1.format(c.netAsset / f.netAsset * 100) + "٪ از صندوق" : "—",
+          "",
+          ""
+        ], false, true);
+      }
     }
     addRow(["مجموع", "", fmtNav(total), "۱۰۰٪", "", ""], true);
     tbl.appendChild(tbody);
