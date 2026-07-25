@@ -536,10 +536,25 @@
 
     renderTable(idxs, labels, visible, vals);
 
-    // partial-period note
-    const lastLbl = labels[periods.length - 1];
-    document.getElementById("partialNote").textContent =
-      "دوره پایانی (" + lastLbl + ") تا " + D.generatedJalali + " است و ممکن است کامل نباشد.";
+    // partial-period note — only when the last shown period is the one still
+    // in progress (its own period hasn't ended yet as of generatedJalali).
+    // A closed period never gets flagged just for being last in the array —
+    // build_report.py already drops immature trailing periods entirely, so if
+    // one is shown here it's either closed, or (rarely) this specific check
+    // catches a same-day edge case.
+    const [gJy, gJm] = D.generatedJalali.split("/").map(Number);
+    const currentPeriodKey = state.freq === "monthly"
+      ? gJy + "-" + String(gJm).padStart(2, "0")
+      : gJy + "-Q" + (Math.ceil(gJm / 3));
+    const lastPeriodKey = periods[periods.length - 1];
+    const noteEl = document.getElementById("partialNote");
+    if (lastPeriodKey === currentPeriodKey) {
+      const lastLbl = labels[periods.length - 1];
+      noteEl.textContent =
+        "دوره پایانی (" + lastLbl + ") تا " + D.generatedJalali + " است و ممکن است کامل نباشد.";
+    } else {
+      noteEl.textContent = "";
+    }
 
     const scaleName = state.scale === 1e13 ? "همت — هزار میلیارد تومان" :
       state.scale === 1e12 ? "هزار میلیارد ریال" : "میلیارد ریال";
