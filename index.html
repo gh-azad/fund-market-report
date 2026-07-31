@@ -17,6 +17,7 @@
     --s1: #2a78d6; --s2: #1baf7a; --s3: #eda100; --s4: #008300;
     --s5: #4a3aa7; --s6: #e34948; --s7: #e87ba4; --s8: #eb6834;
     --agg-comp: #eb6834;
+    --agg-underw: #6a4fb0;
     --agg-others: #898781;
     --agg-ind: #0b0b0b;
     --chip-on: #eef3fb;
@@ -37,6 +38,7 @@
       --s1: #3987e5; --s2: #199e70; --s3: #c98500; --s4: #008300;
       --s5: #9085e9; --s6: #e66767; --s7: #d55181; --s8: #d95926;
       --agg-comp: #d95926;
+      --agg-underw: #9c86e0;
       --agg-others: #898781;
       --agg-ind: #ffffff;
       --chip-on: #24303f;
@@ -246,6 +248,7 @@
     <ul>
       <li>ارزش هر ماه/فصل برابر آخرین روز موجودِ همان دوره شمسی است (مثلاً فصل بهار = آخرین روز خرداد).</li>
       <li>رقبای خصوصی: مفید، آگاه، کاریزما، ترنج، اقتصاد بیدار، فارابی و توسعه فیروزه. «کل صنعت» شامل تمام مدیران است.</li>
+      <li>«تامین سرمایه» شامل ۱۳ شرکت تامین سرمایه دارای مجوز فعالیت (منبع: cfi.codal.ir) است. «سایر مدیران» = کل صنعت منهای رقبای خصوصی و منهای تامین سرمایه.</li>
       <li>صندوق‌های منحل‌شده پیش از تیر ۱۴۰۵ در تاریخچه غایب‌اند؛ سهم بازار سال‌های قدیمی‌تر ممکن است اندکی کم‌برآورد باشد.</li>
       <li>مدیر و نوع هر صندوق در کل تاریخچه بر اساس وضعیت فعلی آن است (فیپ‌ایران تاریخچه تغییر مدیر ارائه نمی‌دهد).</li>
       <li>مقادیر صفر/منفیِ گزارش‌شده در منبع (خطای داده) حذف شده‌اند.</li>
@@ -260,7 +263,12 @@
   "use strict";
   const D = window.FUND_DATA;
   const NCOMP = D.competitors.length;             // 7
-  const E_OTHERS = NCOMP;                          // index of "سایر مدیران" in D.entities
+  // underwritersLabel only exists once the pipeline has been rebuilt with the
+  // تامین سرمایه bucket (older cached data.js won't have it) — feature-detect
+  // so the site doesn't break between a code push and the next server rebuild.
+  const HAS_UNDERW = !!D.underwritersLabel;
+  const E_UNDERW = HAS_UNDERW ? D.entities.indexOf(D.underwritersLabel) : -1;
+  const E_OTHERS = D.entities.indexOf(D.othersLabel); // index of "سایر مدیران" in D.entities
   const MM = D.marketMakingType;                   // 11
 
   // ---- entity/series registry (fixed colors — never repainted) ----
@@ -270,6 +278,9 @@
   const SERIES = [];
   D.competitors.forEach((name, i) => SERIES.push({ id: "c" + i, name, short: SHORT_NAMES[i] || name, color: slot(i), kind: "comp", eIdx: i, on: true }));
   SERIES.push({ id: "aggComp", name: "مجموع رقبای خصوصی", short: "مجموع رقبا", color: css.getPropertyValue("--agg-comp").trim(), kind: "aggComp", on: false });
+  if (HAS_UNDERW) {
+    SERIES.push({ id: "underw", name: D.underwritersLabel, short: D.underwritersLabel, color: css.getPropertyValue("--agg-underw").trim(), kind: "underw", eIdx: E_UNDERW, on: false });
+  }
   SERIES.push({ id: "others", name: D.othersLabel, short: D.othersLabel, color: css.getPropertyValue("--agg-others").trim(), kind: "others", eIdx: E_OTHERS, on: false });
   SERIES.push({ id: "aggInd", name: "مجموع کل صنعت", short: "کل صنعت", color: css.getPropertyValue("--agg-ind").trim(), kind: "aggInd", on: false });
 
@@ -393,17 +404,20 @@
 
   function seriesValues(m) {
     const nP = m.length;
+    const nE = D.entities.length;
     const compTot = new Float64Array(nP), indTot = new Float64Array(nP);
     for (let p = 0; p < nP; p++) {
       for (let e = 0; e < NCOMP; e++) compTot[p] += m[p][e];
-      indTot[p] = compTot[p] + m[p][E_OTHERS];
+      let tot = 0;
+      for (let e = 0; e < nE; e++) tot += m[p][e]; // whole industry, however many buckets exist
+      indTot[p] = tot;
     }
     const out = new Map();
     for (const s of SERIES) {
       const vals = new Float64Array(nP);
       for (let p = 0; p < nP; p++) {
         let nav;
-        if (s.kind === "comp" || s.kind === "others") nav = m[p][s.eIdx];
+        if (s.kind === "comp" || s.kind === "others" || s.kind === "underw") nav = m[p][s.eIdx];
         else if (s.kind === "aggComp") nav = compTot[p];
         else nav = indTot[p];
         if (state.measure === "nav") vals[p] = nav;
@@ -657,6 +671,11 @@
       o.value = i; o.textContent = name;
       selMgr.appendChild(o);
     });
+    if (HAS_UNDERW) {
+      const ou = document.createElement("option");
+      ou.value = E_UNDERW; ou.textContent = D.underwritersLabel;
+      selMgr.appendChild(ou);
+    }
     const o = document.createElement("option");
     o.value = E_OTHERS; o.textContent = D.othersLabel;
     selMgr.appendChild(o);
@@ -767,7 +786,8 @@
 
     const scaleName = state.scale === 1e13 ? "همت — هزار میلیارد تومان" :
       state.scale === 1e12 ? "هزار میلیارد ریال" : "میلیارد ریال";
-    const mgrName = eSel === E_OTHERS ? D.othersLabel : D.competitors[eSel];
+    const mgrName = eSel === E_OTHERS ? D.othersLabel :
+      (HAS_UNDERW && eSel === E_UNDERW) ? D.underwritersLabel : D.competitors[eSel];
     document.getElementById("stackTitle").textContent =
       "ترکیب دارایی " + mgrName + " بر حسب نوع صندوق (" + scaleName + ")";
   }
