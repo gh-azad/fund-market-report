@@ -893,9 +893,15 @@
     s = s.replace(/\(\s*سهامی\s*(خاص|عام)\s*\)/g, "").replace(/سهامی\s*(خاص|عام)/g, "");
     return s.replace(/\s+/g, " ").trim();
   }
+  // spelling-insensitive identity (fetch_daily.manager_key): FIPIRAN respells
+  // managers, e.g. «سبد گردان کاریزما» -> «سبدگردان کاریزما» from mehr 1405
+  function managerKey(s) {
+    return cleanName(s).replace(/آ/g, "ا").replace(/\s+/g, "");
+  }
   function canonicalManager(raw) {
     const c = cleanName(raw);
-    return (D.aliasLookup && D.aliasLookup[c]) || c;
+    const L = D.aliasLookup || {};
+    return L[managerKey(c)] || L[c] || c;
   }
 
   function renderToday() {
@@ -903,7 +909,7 @@
     const eSel = +selMgr2.value;
     const target = D.competitors[eSel];
     const funds = todayItems
-      .filter(f => canonicalManager(f.manager) === target)
+      .filter(f => managerKey(canonicalManager(f.manager)) === managerKey(target))
       .sort((a, b) => b.netAsset - a.netAsset);
     const total = funds.reduce((s, f) => s + (f.netAsset || 0), 0);
 
